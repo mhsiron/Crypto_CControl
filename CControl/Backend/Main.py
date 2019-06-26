@@ -55,34 +55,58 @@ class Network:
         def register_new_peers():
             nodes = request.get_json(force=True)
 
-            #Not required
+            #Not required parameters
             role_requested = nodes.get("role", False)
             otp = nodes.get("otp", False)
             root_access = nodes.get("grant", False)
 
-            #Required
+            #Required information
             node = nodes["node"]
+            url = None
+            if not nodes.get("URL", False):
+                return False
+            else:
+                url = nodes["URL"]
 
-            if not nodes:
+            if not nodes or url is None or node is None:
+                #Checks to make sure valid data was inputted
                 return "Invalid data", 400
-            if self.peers.get(node, False) is False:
+            elif self.peers.get(node, False) is False:
+                #No node exists, generate a new node and send them their one time password (OTP)
                 otp = generate_one_time_password(node)
 
-                if role_requested is False:
+                #Checks what role the person requested
+                if role_requested is False or role_requested == "STUDENT":
                     role_assigned = "STUDENT"
 
-                self.peers[node] = {"otp":otp,"role":role_assigned}
+                if len(self.peers) >0 and (role_requested is not False or role_requested is not "STUDENT"):
+                    # this is where we will have to determine whether or not we should grant a specific role to user upon request. TO DO!
+                    # for now we won't allow this.
+                    role_assigned = "STUDENT"
+
+                self.peers[node] = {"otp":otp,"role":role_assigned,"URL":url}
                 return json.dumps({"status":"REGISTERED","otp":otp, "role":role_assigned}).encode(), 201
             else:
+                #Valid data is inputted AND node already exists
                 if not otp:
+                    #If this runs, the user did not input their password but the node already exists. Error code 678.
                     return json.dumps({"status":"NEED TO SUPPLY OTP"}).encode(), 678
                 else:
-                    print(self.peers.get(node)["otp"], file=sys.stderr)
-                    print(otp, file=sys.stderr)
+                    #If this runs, the user inputted their password
+                    #Check if correct password was submmited
                     if self.peers.get(node)["otp"] == otp:
+
+                        #update URL if new IP Address is detected for logged in PC
+                        if self.peers.get(node)["URL"] != url:
+                            self.peers.get(node)["URL"] = url
+
+                        #Status 679 means logged in, correct password!
                         return json.dumps({"status":"LOGGED IN"}).encode(), 679
                     else:
+                        #If this runs, the user inputted a bad password.
                         return json.dumps({"status":"BAD PASSWORD"}).encode(), 680
+
+            #If this is returned I'm not sure what happened, so 200 means an unknown error - no logic was run
             return json.dumps({"status":"Unknown"}).encode(), 200
 
 
@@ -118,7 +142,8 @@ def consensus():
     longest_chain = None
     current_len = len(blockchain)
  
-    for node in self.peers:
+    for node_info in self.peers:
+        node = node_info["URL"]
         response = requests.get('http://{}/chain'.format(node))
         length = response.json()['length']
         chain = response.json()['chain']
@@ -132,10 +157,11 @@ def consensus():
  
     return False
 def generate_one_time_password(node_256):
+    '''
+    This function is used to generate one time passwords for new peers.
+    It is a hash generation based on both the node hash and the timestamp in which the node was registered.
+    '''
     timestamp = time.time()
     data = {"node":node_256, "timestamp":timestamp}
     all_data = json.dumps(data, sort_keys=True).encode()
     return sha256(all_data).hexdigest()
-
-
-        
