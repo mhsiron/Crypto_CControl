@@ -1,85 +1,73 @@
-from CControl.BlockChain.Structure import ClassControlBlock
 from CControl.BlockChain.Structure import ClassControlBlockChain
-from CControl.BlockChain.Structure import Endpoint
+from CControl.Utilities import Settings, get_network_ip, get_uuid, load_chain, push_peer
+import threading
+import time
 
-from flask import Flask, request, render_template
-import requests
-import json
+#Point to one working node:
+INITIAL_NODE_ADDRESS = "http://10.0.0.139:8693"
+Settings(INITIAL_NODE_ADDRESS=INITIAL_NODE_ADDRESS)
+
+#Initially we need to load the blockchain that already exists out there by pointing it to an existing node:
+data = load_chain(Settings().get("INITIAL_NODE_ADDRESS"))
 
 blockchain = ClassControlBlockChain()
+blockchain.load_initial_chain(data)
+print(blockchain.chain)
 
 from CControl.Backend.Main import Network
 
-n = Network("CCControl", blockchain)
+#Get local information
+get_network_ip()
+get_uuid()
 
-import datetime
-import json
- 
-import requests
-from flask import render_template, redirect, request
 
-import sys
+#See if any identifying information is saved on the local computer
+USERDATA = {}
+try:
+    with open('USERDATA.json') as json_file:
+        USERDATA = json.load(json_file)
+except(IOError):
+    pass
 
-import ast
- 
-CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8693"
- 
-posts = []
+#Now we can create our own node and initialize it with the current blockchain!
+n = Network("CControl", blockchain)
 
-def fetch_posts():
-    get_chain_address = "{}/chain".format(CONNECTED_NODE_ADDRESS)
-    response = requests.get(get_chain_address)
-    if response.status_code == 200:
-        content = []
-        chain = json.loads(response.content)
-        for block in chain["chain"]:
-            for cmd in block["commands"]:
-                if type(cmd) == type("str"):
-                    cmd = ast.literal_eval(cmd)
-                cmd["index"] = block["index"]
-                cmd["hash"] = block["_previous_hash"]
-                cmd["timestamp"] = block["timestamp"]
-                content.append(cmd)
- 
-        global posts
-        posts = sorted(content, key=lambda k: k['timestamp'],
-                       reverse=True)
+print(1)
 
-@n.app.route('/submit', methods=['POST'])
-def submit_textarea():
-    """
-    Endpoint to create a new transaction via our application.
-    """
-    source = request.form["source"]
-    module = request.form["module"]
-    command_parameters = request.form["command_parameters"]
-    destination = request.form["destination"]
- 
-    post_object = {
-        'source': source,
-        'module': module,
-        'command_parameters' :command_parameters,
-        'destination' :destination
-    }
- 
-    # Submit a transaction
-    new_cmd_address = "{}/new_command".format(CONNECTED_NODE_ADDRESS)
- 
-    requests.post(new_cmd_address,
-                  json=post_object,
-                  headers={'Content-type': 'application/json'})
- 
-    return redirect('/')
+@n.before_first_request
+def activate_job():
+    def run_job():
+        print("Registering node onto pointed server")
+        # Now we need to tell the peer node we are connected to to add us to its node:
+        push_peer(**USERDATA)
+        time.sleep(3)
 
-@n.app.route('/')
-def index():
-    fetch_posts()
-    return render_template('index.html',
-                           title='CControl: Admin Portal',
-                           posts=posts,
-                           node_address=CONNECTED_NODE_ADDRESS,
-                           readable_time=timestamp_to_string)
-def timestamp_to_string(epoch_time):
-    return datetime.datetime.fromtimestamp(epoch_time).strftime('%H:%M')
+    thread = threading.Thread(target=run_job)
+    thread.start()
 
+# def start_runner():
+#     def start_loop():
+#         not_started = True
+#         while not_started:
+#             print('In start loop')
+#             try:®
+#                 r = requests.get('http://127.0.0.1:5000/')
+#                 if r.status_code == 200:
+#                     print('Server started, quiting start_loop')
+#                     not_started = False
+#                 print(r.status_code)
+#             except:
+#                 print('Server not yet started')
+#             time.sleep(2)
+#
+#     print('Started runner')
+#     thread = threading.Thread(target=start_loop)
+#     thread.start()
+#
+# if __name__ == "__main__":
+#     start_runner()
+#     n.run()
+
+#We then run our node and let it be accessible publicly!
 n.run(host='0.0.0.0')
+
