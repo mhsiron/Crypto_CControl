@@ -1,6 +1,17 @@
-#Set IP, PORTs
-NETIP = "10.0.0.152" #Point to one working node
-PORT = "8693"
+import requests
+import socket
+from uuid import getnode as get_mac
+from hashlib import sha256
+
+class AllData:
+    data = {}
+
+class Settings(AllData):
+    def __init__(self, **kwargs):
+        self.data.update(kwargs)
+        self.__dict__ = self.data
+    def get(self, key):
+        return self.data.get(key, False)
 
 #Set Possible Commands
 COMMANDS_DICT = {
@@ -11,39 +22,20 @@ COMMANDS_DICT = {
     "Add Node":"/add_nodes"
 }
 
-
-#Required imports
-from uuid import getnode as get_mac
-from hashlib import sha256
-import socket
-import requests
-import json
-
-#Get unique identifier for computer based on MAC address
-MAC = get_mac()
-UUID = sha256(str(MAC).encode()).hexdigest()
-USERDATA = {}
-
-#Get Local IP Address
-HOSTNAME = socket.gethostname()
-USERIP = socket.gethostbyname(HOSTNAME)
-print(USERIP)
-
-
-
-try:
-    with open('USERDATA.json') as json_file:
-        USERDATA = json.load(json_file)
-except(IOError):
-    pass
+def load_chain(origin_server):
+    get_chain_address = "{}/chain".format(origin_server)
+    response = requests.get(get_chain_address)
+    return response.json()
 
 def push_peer(otp = False, role_requested = False, root_access = False, **kwargs):
-	#URL to send commands to: 
-    command_url = "http://"+NETIP+":"+PORT+COMMANDS_DICT["Add Node"]
+	#URL to send commands to:
+    s = Settings()
+    command_url = "http://"+s.get["INITIAL_NODE_ADDRESS"]+COMMANDS_DICT["Add Node"]
+    print(command_url)
 
     #Required parameters to pass
-    data = {"node": str(UUID)}
-    data["URL"] = USERIP
+    data = {"node": s.get("UUID")}
+    data["URL"] = s.get("USERIP")
 
     #Optional paramteters to pass
     if role_requested: data["role_requested"] = role_requested
@@ -71,6 +63,16 @@ def push_peer(otp = False, role_requested = False, root_access = False, **kwargs
         print("Unknown error :(")
     return r1_response["status"]
 
+def get_network_ip():
+    # Get Local IP Address
+    HOSTNAME = socket.gethostname()
+    USERIP = socket.gethostbyname(HOSTNAME)
+    Settings(USERIP=USERIP)
+    return USERIP
 
-
-push_peer(**USERDATA)
+def get_uuid():
+    # Get unique identifier for computer based on MAC address
+    MAC = get_mac()
+    UUID = sha256(str(MAC).encode()).hexdigest()
+    Settings(UUID=UUID)
+    return UUID

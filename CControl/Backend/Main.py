@@ -1,9 +1,7 @@
 from flask import Flask, request
 import requests
 import json
-import sys
 import time
-from CControl.BlockChain.Structure import Command
 from hashlib import sha256
 
 class Network:
@@ -44,10 +42,11 @@ class Network:
             result = self.blockchain.mine()
             if not result:
                 return "No transactions to mine"
+            self.announce_new_block()
             return "Block #{} is mined.".format(result)
 
-        @self.app.route('/pending_tx')
-        def get_pending_tx():
+        @self.app.route('/pending_cmd')
+        def get_pending_cmd():
             return json.dumps({"pending_tx":[command for command in self.blockchain.unconfirmed_commands]})
 
         # endpoint to add new peers to the network.
@@ -124,11 +123,11 @@ class Network:
                 return "The block was discarded by the node", 400
          
             return "Block added to the chain", 201
-             
-        def announce_new_block(block):
-            for peer in self.peers:
-                url = "http://{}/add_block".format(peer)
-                requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
+
+    def announce_new_block(block):
+        for peer in self.peers:
+            url = "http://{}/add_block".format(peer)
+            requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
     def run(self, port=8693, host=None):
         self.app.run(debug=True, port=port, host=host)

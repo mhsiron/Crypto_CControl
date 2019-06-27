@@ -1,7 +1,6 @@
 import time
 from hashlib import sha256
 import json
-import sys
 class ClassControlBlock:
     ''' A class control block can contain multiple commands.
     Traditionally, a block should contain all related commands 
@@ -52,6 +51,18 @@ class ClassControlBlockChain:
         else:
             genesis_block = ClassControlBlock(0, [], time.time(), "0")
             self.chain.append(genesis_block)
+    def load_initial_chain(self, json_data):
+        '''
+        We use this to load an existing chain from the network!
+        If we don't find what we need in the data, the chain remains not updated..
+        :param json_data:
+        :return:
+        '''
+        if isinstance(json_data ,dict):
+            self.chain = json_data.get("chain", [])
+        else:
+            print("Not valid existing blockchain... Check network")
+
     def proof_of_work(self, block):
         """
         Proof of work works by solving a problem. Here we have a simple problem because for our 
