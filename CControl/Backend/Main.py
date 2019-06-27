@@ -3,6 +3,8 @@ import requests
 import json
 import time
 from hashlib import sha256
+import sys
+from CControl.BlockChain.Structure import ClassControlBlock
 
 class Network:
     def __init__(self, name, blockchain, port = 8693):
@@ -112,11 +114,12 @@ class Network:
         # endpoint to add a block mined by someone else to the node's chain.
         @self.app.route('/add_block', methods=['POST'])
         def validate_and_add_block():
-            block_data = request.get_json()
+            block_data = request.get_json(force = True)
+            print(block_data, file=sys.stderr)
             block = ClassControlBlock(block_data["index"], block_data["commands"],
-                          block_data["timestamp", block_data["_previous_hash"]])
+                          block_data["timestamp"], block_data["_previous_hash"])
          
-            proof = block_data['hash']
+            proof = block_data['_hash']
             added = self.blockchain.add_block(block, proof)
          
             if not added:
