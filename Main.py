@@ -10,8 +10,9 @@ Settings(INITIAL_NODE_ADDRESS=INITIAL_NODE_ADDRESS)
 
 #Initially we nee®d to load the blockchain that already exists out there by pointing it to an existing node:
 data = load_chain(Settings().get("INITIAL_NODE_ADDRESS"))
-first_server = True
-if data is []: first_server = False
+first_server = False
+if data == []: first_server = True
+print(first_server)
 
 blockchain = ClassControlBlockChain()
 blockchain.load_initial_chain(data)
@@ -38,7 +39,9 @@ n = Network("CControl", blockchain)
 
 
 def start_runner():
-    ''' Adapted from: '''
+    ''' Adapted from: https://networklore.com/start-task-with-flask/
+    Once Flask Server is Up and Running, we push peer to the nodes if this is not the first server
+    '''
     def start_loop():
         not_started = True
         while not_started:
@@ -48,7 +51,8 @@ def start_runner():
                 print(r.status_code)
                 if r.status_code == 404:
                     print('Server started, quiting start_loop')
-                    push_peer(**USERDATA)
+                    if not first_server:
+                        push_peer(**USERDATA)
                     not_started = False
                 print(r.status_code)
             except:
@@ -60,5 +64,5 @@ def start_runner():
     thread.start()
 
 if __name__ == "__main__":
-    start_runner()
+    if not first_server: start_runner()
     n.run(host='0.0.0.0')
