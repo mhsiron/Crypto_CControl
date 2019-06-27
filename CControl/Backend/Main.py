@@ -42,7 +42,7 @@ class Network:
             result = self.blockchain.mine()
             if not result:
                 return "No transactions to mine"
-            self.announce_new_block()
+            announce_new_block(self.blockchain.chain[-1])
             return "Block #{} is mined.".format(result)
 
         @self.app.route('/pending_cmd')
@@ -124,10 +124,10 @@ class Network:
          
             return "Block added to the chain", 201
 
-    def announce_new_block(block):
-        for peer in self.peers:
-            url = "http://{}/add_block".format(peer)
-            requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
+        def announce_new_block(block):
+            for peer in self.peers:
+                url = "http://{}/add_block".format(peer)
+                requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
     def run(self, port=8693, host=None):
         self.app.run(debug=True, port=port, host=host)

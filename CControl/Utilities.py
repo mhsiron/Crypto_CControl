@@ -2,6 +2,7 @@ import requests
 import socket
 from uuid import getnode as get_mac
 from hashlib import sha256
+import json
 
 class AllData:
     data = {}
@@ -32,9 +33,10 @@ def load_chain(origin_server):
         return []
 
 def push_peer(otp = False, role_requested = False, root_access = False, **kwargs):
+    USERDATA = {}
 	#URL to send commands to:
     s = Settings()
-    command_url = "http://"+s.get["INITIAL_NODE_ADDRESS"]+COMMANDS_DICT["Add Node"]
+    command_url = s.get("INITIAL_NODE_ADDRESS")+COMMANDS_DICT["Add Node"]
     print(command_url)
 
     #Required parameters to pass

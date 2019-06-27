@@ -62,7 +62,15 @@ class ClassControlBlockChain:
             if not json_data.get("chain", False):
                 print("not valid format...")
             else:
-                self.chain = json.data.get("chain")
+                temp_chain = json_data.get("chain")
+                self.chain = []
+                for chain in temp_chain:
+                    n = ClassControlBlock(index = chain["index"],commands = chain["commands"],
+                                          timestamp = chain["timestamp"],
+                                          previous_hash=chain["_previous_hash"])
+                    n._hash = chain["_hash"]
+                    self.chain.append(n)
+
         else:
             print("Not valid existing blockchain... Check network")
 
