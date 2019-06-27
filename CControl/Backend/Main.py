@@ -3,6 +3,7 @@ import requests
 import json
 import time
 from hashlib import sha256
+import sys
 
 class Network:
     def __init__(self, name, blockchain, port = 8693):
@@ -125,8 +126,9 @@ class Network:
             return "Block added to the chain", 201
 
         def announce_new_block(block):
-            for peer in self.peers:
-                url = "http://{}/add_block".format(peer)
+            for key, peer in self.peers.items():
+                print(peer, file=sys.stderr)
+                url = "http://{}:8693/add_block".format(peer["URL"])
                 requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
 
     def run(self, port=8693, host=None):
