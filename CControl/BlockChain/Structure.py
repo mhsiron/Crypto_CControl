@@ -59,7 +59,10 @@ class ClassControlBlockChain:
         :return:
         '''
         if isinstance(json_data ,dict):
-            self.chain = json_data.get("chain", [])
+            if not json_data.get("chain", False):
+                print("not valid format...")
+            else:
+                self.chain = json.data.get("chain")
         else:
             print("Not valid existing blockchain... Check network")
 

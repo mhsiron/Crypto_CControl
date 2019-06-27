@@ -23,9 +23,13 @@ COMMANDS_DICT = {
 }
 
 def load_chain(origin_server):
-    get_chain_address = "{}/chain".format(origin_server)
-    response = requests.get(get_chain_address)
-    return response.json()
+    try:
+        get_chain_address = "{}/chain".format(origin_server)
+        response = requests.get(get_chain_address)
+        return response.json()
+    except:
+        print("Refused")
+        return []
 
 def push_peer(otp = False, role_requested = False, root_access = False, **kwargs):
 	#URL to send commands to:
