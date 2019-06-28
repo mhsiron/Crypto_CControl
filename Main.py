@@ -2,6 +2,14 @@ from CControl.BlockChain.Structure import ClassControlBlockChain
 from CControl.Utilities import Settings, get_network_ip, get_uuid, load_chain, push_peer
 import json
 
+
+'''
+Still todo:
+Register the node we are connected to as a peer, without a hosted otp...
+Add ourselves and our OTP to our peer list.
+But make sure that we don't do a recursive announcement...
+'''
+
 #Point to one working node:
 INITIAL_NODE_ADDRESS = "http://10.0.0.139:8693"
 Settings(INITIAL_NODE_ADDRESS=INITIAL_NODE_ADDRESS)
