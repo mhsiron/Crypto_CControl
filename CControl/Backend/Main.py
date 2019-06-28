@@ -4,7 +4,8 @@ import json
 import time
 from hashlib import sha256
 import sys
-from CControl.BlockChain.Structure import ClassControlBlock
+from Crypto_CControl.CControl.BlockChain.Structure import ClassControlBlock
+from Crypto_CControl.CControl.Utilities import Settings
 
 class Network:
     def __init__(self, name, blockchain, port = 8693):
@@ -21,14 +22,27 @@ class Network:
         @self.app.route('/new_command', methods=['POST'])
         def new_command():
             cmd_data = request.get_json()
-            required_fields = ["source", "module","command_parameters","destination"]
+            required_fields = ["source", "module","command_parameters","destination","node","otp"]
          
             for field in required_fields:
                 if not cmd_data.get(field):
                     return "Invalid Command Input", 404
             #cmd_data["timestamp"] = time.time()
-            self.blockchain.add_new_command(**cmd_data)
-            return "Success", 201
+            input_data = dict(cmd_data)
+            input_data.pop("node")
+            input_data.pop("otp")
+
+            if cmd_data["node"] not in self.peers.keys():
+                return "You must register peer first", 300
+            elif self.validate_otp(node = cmd_data["node"], otp=cmd_data["otp"])(0) == False:
+                #Only authenticated people can add blocks...
+                return "Bad OTP", 301
+            elif self.validate_otp(node = cmd_data["node"], otp=cmd_data["otp"])(0)["role"] != "TEACHER":
+                #Only people with role as "TEACHER" can add blocks...
+                return "Role not allowed to send command...", 302
+            else:
+                self.blockchain.add_new_command(**input_data)
+                return "Success", 200
 
         #Used to query all the blocks in the chain!
         @self.app.route('/chain', methods=['GET'])
@@ -85,7 +99,7 @@ class Network:
                     # for now we won't allow this.
                     role_assigned = "STUDENT"
 
-                self.peers[node] = {"otp":otp,"role":role_assigned,"URL":url}
+                self.peers[node] = {"otp":otp,"role":role_assigned,"URL":url,"status":"ONLINE","URL_otp_hosted":Settings().get("USERIP")}
                 return json.dumps({"status":"REGISTERED","otp":otp, "role":role_assigned}).encode(), 201
             else:
                 #Valid data is inputted AND node already exists
@@ -100,6 +114,10 @@ class Network:
                         #update URL if new IP Address is detected for logged in PC
                         if self.peers.get(node)["URL"] != url:
                             self.peers.get(node)["URL"] = url
+
+                        #update status if status is OFFLINE:
+                        if self.peers.get(node)["status"] == "OFFLINE":
+                            self.peers.get(node)["status"] == "ONLINE"
 
                         #Status 679 means logged in, correct password!
                         return json.dumps({"status":"LOGGED IN"}).encode(), 679
@@ -129,8 +147,37 @@ class Network:
 
         def announce_new_block(block):
             for peer in self.peers:
-                url = "http://{}/add_block".format(peer)
-                requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
+                if peer["status"] == "ONLINE"
+                    try:
+                        url = "http://{}/add_block".format(peer["URL"])
+                        requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
+                    except:
+                        #If an error happens, the node is probably offline:
+                        peer["status"] == "OFFLINE"
+
+        @self.app.route('/validate_otp', method=["{PST"])
+        def validate_otp(node = None, otp=None):
+            '''
+            This will be the method that validates otp wherever otp is located...
+            '''
+            validate_data = request.get_json()
+
+            if node == None and otp == None
+                node = validate_data.get("node", False)
+                otp = validate_data.get("otp", False)
+
+            if not node or not otp:
+                return "Invalid Data", 901
+
+            if not self.peers.get(node).get("otp"):
+                url = "http://{}/validate_otp".format(self.peers.get(node).get("URL_otp_hosted"))
+                r1 = requests.post(url, data=json.dumps({"ndde":node,"otp":otp}, sort_keys=True))
+                return r1.data
+            elif self.peers.get(node).get("otp") == otp
+                return json.dumps("result":True, "role":self.peers.get(node).get("role")), 900
+            else:
+                return json.dumps("result":False), 902
+
 
     def run(self, port=8693, host=None):
         self.app.run(debug=True, port=port, host=host)
