@@ -41,6 +41,7 @@ class ClassControlBlockChain:
         self.unconfirmed_commands = [] # commands yet to get into blockchain
         self.chain = []
         self.__create_genesis_block() #hidden command, should not be accessible
+        self._first = True
  
     def __create_genesis_block(self):
         """
@@ -64,6 +65,7 @@ class ClassControlBlockChain:
             else:
                 temp_chain = json_data.get("chain")
                 self.chain = []
+                self._first = False
                 for chain in temp_chain:
                     n = ClassControlBlock(index = chain["index"],commands = chain["commands"],
                                           timestamp = chain["timestamp"],

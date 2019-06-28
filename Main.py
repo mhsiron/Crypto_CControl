@@ -37,6 +37,7 @@ USERDATA = {}
 try:
     with open('USERDATA.json') as json_file:
         USERDATA = json.load(json_file)
+        Settings(otp = USERDATA.get("otp", False))
 except(IOError):
     pass
 
