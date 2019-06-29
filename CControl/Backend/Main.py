@@ -80,7 +80,7 @@ class Network:
         #request the mining!
         @self.app.route('/mine', methods=['GET'])
         def mine_unconfirmed_commands():
-            print("Mine_Unconfirmed_Commands ran, file=sys.stderr)
+            print("Mine_Unconfirmed_Commands ran", file=sys.stderr)
             result = self.blockchain.mine()
             if not result:
                 return "No transactions to mine"
