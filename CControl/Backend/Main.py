@@ -167,6 +167,7 @@ class Network:
             print(type(block_data["commands"]), file=sys.stderr)
             commands = []
             for element in block_data["commands"]:
+                element= json.loads(element)
                 commands.append(Command(element["source"], element["module"],
                                         element["command_parameters"],element["destination"]).to_json())
 
@@ -182,21 +183,30 @@ class Network:
             return "Block added to the chain", 201
 
         def announce_new_block(block):
+            data = dict(block.__dict__)
+            print(data, file = sys.stderr)
             print("Announce new block ran", file=sys.stderr)
             for node, peer in self.peers.items():
                 print(peer, file=sys.stderr)
                 if peer["status"] == "ONLINE" and node != self.me["node"]:
                     print("Online", file=sys.stderr)
-                    try:
-                        url = "http://{}/add_block".format(peer["URL"])
-                        print(url, file=sys.stderr)
-                        print(block.__dict__, file=sys.stderr)
-                        r1 = requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
-                        print(r1.status_code)
-                        print("tried success", file=sys.stderr)
-                    except:
-                        #If an error happens, the node is probably offline:
-                        self.peers[node]["status"] = "OFFLINE"
+                    url = "http://{}:8693/add_block".format(peer["URL"])
+                    commands_list = data["commands"]
+                    commands = []
+                    for element in commands_list:
+                        print(element, file=sys.stderr)
+                        element = json.loads(element)
+                        commands.append(Command(element["source"], element["module"],
+                                                element["command_parameters"], element["destination"]).to_json())
+                    data["commands"] = commands
+                    print(data)
+                    data = json.dumps(data, sort_keys = True).encode()
+                    r1 = requests.post(url, data=data)
+                    print(r1.status_code)
+                    print("tried success", file=sys.stderr)
+                    # except:
+                    #     #If an error happens, the node is probably offline:
+                    #     self.peers[node]["status"] = "OFFLINE"
 
         @self.app.route('/validate_otp', methods=["POST"])
         def validate_otp(node = None, otp=None):
