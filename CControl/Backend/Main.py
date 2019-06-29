@@ -4,8 +4,8 @@ import json
 import time
 from hashlib import sha256
 import sys
-from Crypto_CControl.CControl.BlockChain.Structure import ClassControlBlock
-from Crypto_CControl.CControl.Utilities import Settings
+from CControl.BlockChain.Structure import ClassControlBlock
+from CControl.Utilities import Settings
 
 class Network:
     def __init__(self, name, blockchain, s, port = 8693):

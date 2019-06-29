@@ -9,13 +9,14 @@ class ClassControlBlock:
     This is useful for organizing blocks. But in reality it is
     controlled by when the blocks are mined.
     A block should not contain any data - all data should be in commands!'''
-    def __init__(self, index, commands, timestamp, previous_hash):
+    def __init__(self, index, commands, timestamp, previous_hash), nonce=0:
         self._hash = None
         self.index = index
         self.commands = commands 
         self.timestamp = timestamp
         self._previous_hash = previous_hash
         self._hash = self.compute_hash()
+        self.nonce = nonce
     def compute_hash(self):
         '''
         Turns the current block into a hash, by converting the object's dictionary to a string
@@ -127,6 +128,8 @@ class ClassControlBlockChain:
         b = ClassControlBlockChain.problem
         print((block_hash.startswith(b * ClassControlBlockChain.difficulty)), file=sys.stderr)
         print(block_hash == block.compute_hash(), file=sys.stderr)
+        print(block.compute_hash(), file=sys.stderr)
+        print(block_hash, file=sys.stderr)
         return (block_hash.startswith(b * ClassControlBlockChain.difficulty) and
                 block_hash == block.compute_hash())
     
