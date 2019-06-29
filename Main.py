@@ -11,7 +11,7 @@ But make sure that we don't do a recursive announcement...
 '''
 
 #Point to one working node:
-INITIAL_NODE_ADDRESS = "http://10.0.0.139:8693"
+INITIAL_NODE_ADDRESS = "http://10.0.0.152:8693"
 Settings(INITIAL_NODE_ADDRESS=INITIAL_NODE_ADDRESS)
 
 #Initially we nee®d to load the blockchain that already exists out there by pointing it to an existing node:
