@@ -191,7 +191,8 @@ class Network:
                         url = "http://{}/add_block".format(peer["URL"])
                         print(url, file=sys.stderr)
                         print(block.__dict__, file=sys.stderr)
-                        requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
+                        r1 = requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
+                        print(r1.status_code)
                         print("tried success", file=sys.stderr)
                     except:
                         #If an error happens, the node is probably offline:
