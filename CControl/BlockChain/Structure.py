@@ -25,6 +25,7 @@ class ClassControlBlock:
         block_string = dict(self.__dict__)
         block_string.pop("_hash")
         block_string = json.dumps(block_string, sort_keys=True)
+        print(block_string, file=sys.stderr)
         return sha256(block_string.encode()).hexdigest()
 
 class ClassControlBlockChain:
@@ -108,6 +109,8 @@ class ClassControlBlockChain:
             return False
  
         block._hash = proof
+        print(proof, file=sys.stderr)
+        print(block.compute_hash(), file=sys.stderr)
         self.chain.append(block)
         self.unconfirmed_commands = []
         return True

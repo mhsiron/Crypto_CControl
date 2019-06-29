@@ -178,10 +178,15 @@ class Network:
         def announce_new_block(block):
             print("Announce new block ran", file=sys.stderr)
             for node, peer in self.peers.items():
+                print(peer, file=sys.stderr)
                 if peer["status"] == "ONLINE" and node != self.me["node"]:
+                    print("Online", file=sys.stderr)
                     try:
                         url = "http://{}/add_block".format(peer["URL"])
+                        print(url, file=sys.stderr)
+                        print(block.__dict__, file=sys.stderr)
                         requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
+                        print("tried success", file=sys.stderr)
                     except:
                         #If an error happens, the node is probably offline:
                         self.peers[node]["status"] = "OFFLINE"
