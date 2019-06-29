@@ -8,7 +8,7 @@ from Crypto_CControl.CControl.BlockChain.Structure import ClassControlBlock
 from Crypto_CControl.CControl.Utilities import Settings
 
 class Network:
-    def __init__(self, name, blockchain, port = 8693):
+    def __init__(self, name, blockchain, s, port = 8693):
         self.app =  Flask(name)
         self.name = name
         self.blockchain = blockchain
@@ -17,7 +17,7 @@ class Network:
         self.peers = dict()
 
         #Get our peer
-        self.node = Settings().get("UUID")
+        self.node = s.get("UUID")
 
         #Get our role
         self.role_assigned = "STUDENT"
@@ -25,17 +25,18 @@ class Network:
             self.role_assigned = "TEACHER"
 
         #Get our otp
-        self.otp = Settings().get("otp")
+        self.otp = s.get("otp")
         if not self.otp:
             self.otp = generate_one_time_password(self.node)
 
-        self.url = Settings().get("URL")
+        self.url = s.get("URL")
 
-        self.me = {"node":self.node,"otp":self.otp,"role":self.role_assigned,"URL":self.url,"status":"ONLINE","URL_otp_hosted":Settings().get("USERIP")}
-
+        self.me = {"node":self.node,"otp":self.otp,"role":self.role_assigned,"URL":self.url,"status":"ONLINE","URL_otp_hosted":s.get("USERIP")}
+        print(self.me)
         my_peer = dict(self.me)
         my_peer.pop("node")
         self.peers[self.me["node"]] = my_peer
+        print(self.peers.keys())
 
         # This allows us to create a POST request to submit a new command !
         @self.app.route('/new_command', methods=['POST'])
@@ -51,12 +52,14 @@ class Network:
             input_data.pop("node")
             input_data.pop("otp")
 
+            print(validate_otp(node=cmd_data["node"], otp=cmd_data["otp"]), file=sys.stderr)
+
             if cmd_data["node"] not in self.peers.keys():
                 return "You must register peer first", 300
-            elif self.validate_otp(node = cmd_data["node"], otp=cmd_data["otp"])(0) == False:
+            elif validate_otp(node = cmd_data["node"], otp=cmd_data["otp"])[1] != 900:
                 #Only authenticated people can add blocks...
                 return "Bad OTP", 301
-            elif self.validate_otp(node = cmd_data["node"], otp=cmd_data["otp"])(0)["role"] != "TEACHER":
+            elif "TEACHER" not in validate_otp(node = cmd_data["node"], otp=cmd_data["otp"])[0]:
                 #Only people with role as "TEACHER" can add blocks...
                 return "Role not allowed to send command...", 302
             else:

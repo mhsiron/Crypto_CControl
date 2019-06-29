@@ -42,10 +42,11 @@ except(IOError):
     pass
 
 #Now we can create our own node and initialize it with the current blockchain!
-n = Network("CControl", blockchain)
+
 
 if not first_server:
     push_peer(**USERDATA)
     #n.peers.append()
-
+s = Settings()
+n = Network("CControl", blockchain,s)
 n.run(host='0.0.0.0')
