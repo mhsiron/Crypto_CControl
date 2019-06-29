@@ -4,7 +4,7 @@ import json
 import time
 from hashlib import sha256
 import sys
-from CControl.BlockChain.Structure import ClassControlBlock
+from CControl.BlockChain.Structure import Command, ClassControlBlock
 from CControl.Utilities import Settings
 
 class Network:
@@ -164,8 +164,14 @@ class Network:
             print("Validate and add block ran", file=sys.stderr)
             block_data = request.get_json(force = True)
             print(block_data, file=sys.stderr)
-            block = ClassControlBlock(block_data["index"], block_data["commands"],
-                          block_data["timestamp"], block_data["_previous_hash"])
+            print(type(block_data["commands"]), file=sys.stderr)
+            commands = []
+            for element in block_data["commands"]:
+                commands.append(Command(element["source"], element["module"],
+                                        element["command_parameters"],element["destination"]).to_json())
+
+            block = ClassControlBlock(block_data["index"], commands,
+                          block_data["timestamp"], block_data["_previous_hash"], nonce = block_data["nonce"])
          
             proof = block_data['_hash']
             added = self.blockchain.add_block(block, proof)

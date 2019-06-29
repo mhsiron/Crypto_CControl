@@ -9,7 +9,7 @@ class ClassControlBlock:
     This is useful for organizing blocks. But in reality it is
     controlled by when the blocks are mined.
     A block should not contain any data - all data should be in commands!'''
-    def __init__(self, index, commands, timestamp, previous_hash), nonce=0:
+    def __init__(self, index, commands, timestamp, previous_hash, nonce=0):
         self._hash = None
         self.index = index
         self.commands = commands 
