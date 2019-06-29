@@ -41,7 +41,9 @@ class Network:
         # This allows us to create a POST request to submit a new command !
         @self.app.route('/new_command', methods=['POST'])
         def new_command():
+            print("New Command Ran", file=sys.stderr)
             cmd_data = request.get_json()
+            print(cmd_data, file=sys.stderr)
             required_fields = ["source", "module","command_parameters","destination","node","otp"]
          
             for field in required_fields:
@@ -69,6 +71,7 @@ class Network:
         #Used to query all the blocks in the chain!
         @self.app.route('/chain', methods=['GET'])
         def get_chain():
+            print("Get Chain Ran", file=sys.stderr)
             chain_data = []
             for block in self.blockchain.chain:
                 chain_data.append(block.__dict__)
@@ -77,6 +80,7 @@ class Network:
         #request the mining!
         @self.app.route('/mine', methods=['GET'])
         def mine_unconfirmed_commands():
+            print("Mine_Unconfirmed_Commands ran, file=sys.stderr)
             result = self.blockchain.mine()
             if not result:
                 return "No transactions to mine"
@@ -85,12 +89,15 @@ class Network:
 
         @self.app.route('/pending_cmd')
         def get_pending_cmd():
+            print("Get pending cmd ran", file=sys.stderr)
             return json.dumps({"pending_tx":[command for command in self.blockchain.unconfirmed_commands]})
 
         # endpoint to add new peers to the network.
         @self.app.route('/add_nodes', methods=['POST'])
         def register_new_peers():
+            print("Register new peer ran", file=sys.stderr)
             nodes = request.get_json(force=True)
+            print(nodes, file=sys.stderr)
 
             #Not required parameters
             role_requested = nodes.get("role", False)
@@ -154,6 +161,7 @@ class Network:
         # endpoint to add a block mined by someone else to the node's chain.
         @self.app.route('/add_block', methods=['POST'])
         def validate_and_add_block():
+            print("Validate and add block ran", file=sys.stderr)
             block_data = request.get_json(force = True)
             print(block_data, file=sys.stderr)
             block = ClassControlBlock(block_data["index"], block_data["commands"],
@@ -168,21 +176,24 @@ class Network:
             return "Block added to the chain", 201
 
         def announce_new_block(block):
-            for peer in self.peers:
-                if peer["status"] == "ONLINE" and peer["node"] != self.me["node"]:
+            print("Announce new block ran", file=sys.stderr)
+            for node, peer in self.peers.items():
+                if peer["status"] == "ONLINE" and node != self.me["node"]:
                     try:
                         url = "http://{}/add_block".format(peer["URL"])
                         requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
                     except:
                         #If an error happens, the node is probably offline:
-                        peer["status"] == "OFFLINE"
+                        self.peers[node]["status"] = "OFFLINE"
 
         @self.app.route('/validate_otp', methods=["POST"])
         def validate_otp(node = None, otp=None):
             '''
             This will be the method that validates otp wherever otp is located...
             '''
+            print("Validate OTP ran", file=sys.stderr)
             validate_data = request.get_json()
+
 
             if node == None and otp == None:
                 node = validate_data.get("node", False)

@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
 import json
+import sys
 class ClassControlBlock:
     ''' A class control block can contain multiple commands.
     Traditionally, a block should contain all related commands 
@@ -97,6 +98,7 @@ class ClassControlBlockChain:
         """
         Once the PoW is satisfied, the block is added to the chain.
         """
+        print("Add Block on BCX ran", file=sys.stderr)
         _previous_hash = self.last_block._hash
  
         if _previous_hash != block._previous_hash:
@@ -115,8 +117,13 @@ class ClassControlBlockChain:
         Check if block_hash is valid hash of block and satisfies
         the difficulty criteria.
         """
+        print("Is valid proof ran", file=sys.stderr)
+        print(block, file=sys.stderr)
+        print(hash, file=sys.stderr)
         #the PoW problem to solve is to make sure that the computed hash has the first two bytes being:
         b = ClassControlBlockChain.problem
+        print((block_hash.startswith(b * ClassControlBlockChain.difficulty)), file=sys.stderr)
+        print(block_hash == block.compute_hash(), file=sys.stderr)
         return (block_hash.startswith(b * ClassControlBlockChain.difficulty) and
                 block_hash == block.compute_hash())
     
