@@ -54,8 +54,6 @@ class Network:
             input_data.pop("node")
             input_data.pop("otp")
 
-            print(validate_otp(node=cmd_data["node"], otp=cmd_data["otp"]), file=sys.stderr)
-
             if cmd_data["node"] not in self.peers.keys():
                 return "You must register peer first", 300
             elif validate_otp(node = cmd_data["node"], otp=cmd_data["otp"])[1] != 900:
@@ -128,6 +126,7 @@ class Network:
                     # for now we won't allow this.
                     role_assigned = "STUDENT"
 
+
                 self.peers[node] = {"otp":otp,"role":role_assigned,"URL":url,"status":"ONLINE","URL_otp_hosted":Settings().get("USERIP")}
                 return json.dumps({"status":"REGISTERED","otp":otp, "role":role_assigned}).encode(), 201
             else:
@@ -167,6 +166,7 @@ class Network:
             print(type(block_data["commands"]), file=sys.stderr)
             commands = []
             for element in block_data["commands"]:
+                element = json.loads(element)
                 commands.append(Command(element["source"], element["module"],
                                         element["command_parameters"],element["destination"]).to_json())
 
@@ -213,9 +213,11 @@ class Network:
 
             if not node or not otp:
                 return "Invalid Data", 901
-
-            if not self.peers.get(node).get("otp"):
-                url = "http://{}/validate_otp".format(self.peers.get(node).get("URL_otp_hosted"))
+            print(self.peers)
+            if not self.peers.get(node, False):
+                return "peer cannot be found..."
+            elif not self.peers.get(node).get("otp", False):
+                url = "http://{}:8693/validate_otp".format(self.peers.get(node).get("URL_otp_hosted"))
                 r1 = requests.post(url, data=json.dumps({"ndde":node,"otp":otp}, sort_keys=True))
                 return r1.data
             elif self.peers.get(node).get("otp") == otp:
