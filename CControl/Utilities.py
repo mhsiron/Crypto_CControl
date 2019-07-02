@@ -57,6 +57,8 @@ def push_peer(otp = False, role_requested = False, root_access = False, **kwargs
         print("New User! Please save your OTP somewhere. By default, will create data file")
         USERDATA["otp"] = r1_response["otp"]
         USERDATA["role"] = r1_response["role"]
+        USERDATA["remote_host"] = r1.response["me"]
+        Settings(remote_host = USERDATA["remote_host"])
 
         with open('USERDATA.json', 'w') as outfile:
             json.dump(USERDATA, outfile)

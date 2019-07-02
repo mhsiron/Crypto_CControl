@@ -128,7 +128,7 @@ class Network:
 
 
                 self.peers[node] = {"otp":otp,"role":role_assigned,"URL":url,"status":"ONLINE","URL_otp_hosted":Settings().get("USERIP")}
-                return json.dumps({"status":"REGISTERED","otp":otp, "role":role_assigned}).encode(), 201
+                return json.dumps({"status":"REGISTERED","otp":otp, "role":role_assigned, "me":self.node}).encode(), 201
             else:
                 #Valid data is inputted AND node already exists
                 if not otp:

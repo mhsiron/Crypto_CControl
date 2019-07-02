@@ -11,8 +11,8 @@ But make sure that we don't do a recursive announcement...
 '''
 
 #Point to one working node:
-INITIAL_NODE_ADDRESS = "http://10.0.0.139:8693"
-Settings(INITIAL_NODE_ADDRESS=INITIAL_NODE_ADDRESS)
+INITIAL_NODE_ADDRESS = "http://10.0.0.139"
+Settings(INITIAL_NODE_ADDRESS=INITIAL_NODE_ADDRESS+":8693")
 
 #Initially we nee®d to load the blockchain that already exists out there by pointing it to an existing node:
 data = load_chain(Settings().get("INITIAL_NODE_ADDRESS"))
@@ -46,7 +46,10 @@ except(IOError):
 
 if not first_server:
     push_peer(**USERDATA)
-    #n.peers.append()
+
 s = Settings()
 n = Network("CControl", blockchain,s)
+if Settings().get("remote_host":
+    n.peers[Settings().get("remote_host")] = {"URL_otp_hosted":INITIAL_NODE_ADDRESS}
+
 n.run(host='0.0.0.0')
