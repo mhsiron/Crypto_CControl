@@ -16,7 +16,7 @@ class ClassControlBlock:
         self.timestamp = timestamp
         self._previous_hash = previous_hash
         self._hash = self.compute_hash()
-        self.nonce = nonce
+        self.nonce = nonce #this is the solution to the problem to be solved for PoW algorithm
     def compute_hash(self):
         '''
         Turns the current block into a hash, by converting the object's dictionary to a string
@@ -27,6 +27,8 @@ class ClassControlBlock:
         block_string.pop("_hash")
         block_string = json.dumps(block_string, sort_keys=True)
         print(block_string, file=sys.stderr)
+
+        #We need to encode the hash correctly to be compatible with REST API
         return sha256(block_string.encode()).hexdigest()
 
 class ClassControlBlockChain:
@@ -60,11 +62,10 @@ class ClassControlBlockChain:
         We use this to load an existing chain from the network!
         If we don't find what we need in the data, the chain remains not updated..
         :param json_data:
-        :return:
         '''
         if isinstance(json_data ,dict):
             if not json_data.get("chain", False):
-                print("not valid format...")
+                return "Not valid format"
             else:
                 temp_chain = json_data.get("chain")
                 self.chain = []
@@ -77,7 +78,7 @@ class ClassControlBlockChain:
                     self.chain.append(n)
 
         else:
-            print("Not valid existing blockchain... Check network")
+            return "No blockchain found"
 
     def proof_of_work(self, block):
         """
@@ -100,7 +101,6 @@ class ClassControlBlockChain:
         """
         Once the PoW is satisfied, the block is added to the chain.
         """
-        print("Add Block on BCX ran", file=sys.stderr)
         _previous_hash = self.last_block._hash
  
         if _previous_hash != block._previous_hash:
@@ -110,8 +110,6 @@ class ClassControlBlockChain:
             return False
  
         block._hash = proof
-        print(proof, file=sys.stderr)
-        print(block.compute_hash(), file=sys.stderr)
         self.chain.append(block)
         self.unconfirmed_commands = []
         return True
@@ -121,15 +119,8 @@ class ClassControlBlockChain:
         Check if block_hash is valid hash of block and satisfies
         the difficulty criteria.
         """
-        print("Is valid proof ran", file=sys.stderr)
-        print(block, file=sys.stderr)
-        print(hash, file=sys.stderr)
         #the PoW problem to solve is to make sure that the computed hash has the first two bytes being:
         b = ClassControlBlockChain.problem
-        print((block_hash.startswith(b * ClassControlBlockChain.difficulty)), file=sys.stderr)
-        print(block_hash == block.compute_hash(), file=sys.stderr)
-        print(block.compute_hash(), file=sys.stderr)
-        print(block_hash, file=sys.stderr)
         return (block_hash.startswith(b * ClassControlBlockChain.difficulty) and
                 block_hash == block.compute_hash())
     
@@ -183,22 +174,3 @@ class Command:
         self.status = new_status
     def to_json(self):
         return json.dumps(self.__dict__, sort_keys=True)
-
-class Endpoint:
-    def __init__(self, username, role, room):
-        self._uuid = None
-        self.username = username
-        self.role = role
-        self.room = room
-        self._time_created = time.time()
-        self._uuid = self.compute_hash()
-    def compute_hash(self):
-        '''
-        Turns the current block into a hash, by converting the object's dictionary to a string
-        and passing it through the sha256 library. When we run this function it is important to 
-        remove the _hash keyword itself from the string
-        '''
-        endpoint_string = dict(self.__dict__)
-        endpoint_string.pop("_uuid")
-        endpoint_string = str(endpoint_string).encode("utf-8")
-        return sha256(endpoint_string).hexdigest()

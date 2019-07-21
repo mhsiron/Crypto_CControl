@@ -4,6 +4,7 @@ import json
 import time
 from hashlib import sha256
 import sys
+from CControl.mods.modules import load, validate
 from CControl.BlockChain.Structure import Command, ClassControlBlock
 from CControl.Utilities import Settings
 
@@ -32,18 +33,14 @@ class Network:
         self.url = s.get("URL")
 
         self.me = {"node":self.node,"otp":self.otp,"role":self.role_assigned,"URL":self.url,"status":"ONLINE","URL_otp_hosted":s.get("USERIP")}
-        print(self.me)
         my_peer = dict(self.me)
         my_peer.pop("node")
         self.peers[self.me["node"]] = my_peer
-        print(self.peers.keys())
 
         # This allows us to create a POST request to submit a new command !
         @self.app.route('/new_command', methods=['POST'])
         def new_command():
-            print("New Command Ran", file=sys.stderr)
             cmd_data = request.get_json()
-            print(cmd_data, file=sys.stderr)
             required_fields = ["source", "module","command_parameters","destination","node","otp"]
          
             for field in required_fields:
@@ -69,7 +66,6 @@ class Network:
         #Used to query all the blocks in the chain!
         @self.app.route('/chain', methods=['GET'])
         def get_chain():
-            print("Get Chain Ran", file=sys.stderr)
             chain_data = []
             for block in self.blockchain.chain:
                 chain_data.append(block.__dict__)
@@ -78,7 +74,6 @@ class Network:
         #request the mining!
         @self.app.route('/mine', methods=['GET'])
         def mine_unconfirmed_commands():
-            print("Mine_Unconfirmed_Commands ran", file=sys.stderr)
             result = self.blockchain.mine()
             if not result:
                 return "No transactions to mine"
@@ -87,15 +82,12 @@ class Network:
 
         @self.app.route('/pending_cmd')
         def get_pending_cmd():
-            print("Get pending cmd ran", file=sys.stderr)
             return json.dumps({"pending_tx":[command for command in self.blockchain.unconfirmed_commands]})
 
         # endpoint to add new peers to the network.
         @self.app.route('/add_nodes', methods=['POST'])
         def register_new_peers():
-            print("Register new peer ran", file=sys.stderr)
             nodes = request.get_json(force=True)
-            print(nodes, file=sys.stderr)
 
             #Not required parameters
             role_requested = nodes.get("role", False)
@@ -160,15 +152,31 @@ class Network:
         # endpoint to add a block mined by someone else to the node's chain.
         @self.app.route('/add_block', methods=['POST'])
         def validate_and_add_block():
-            print("Validate and add block ran", file=sys.stderr)
+            mods =load()
             block_data = request.get_json(force = True)
-            print(block_data, file=sys.stderr)
-            print(type(block_data["commands"]), file=sys.stderr)
             commands = []
             for element in block_data["commands"]:
                 element = json.loads(element)
                 commands.append(Command(element["source"], element["module"],
                                         element["command_parameters"],element["destination"]).to_json())
+
+                #Run commands if they apply to me...
+                commands[-1]["destination"] is self.me["node"]:
+                    current_mod = mods.run_module(commands[-1]["command_parameters"]["module"])
+                    if commands[-1]["command_parameters"]["module"] in mods.modules:
+                        # Check if module file is available
+                        if validate(current_mod):
+                            ## Checks if module is formatted correctly before running the command
+                            current_mod.run(**command["commandArgs"])  # run the module
+                            ##TODO: update command status
+                            print(command["commandName"] + " has been run!")
+                            del current_mod
+                        else:
+                            ##TODO: update command status
+                            print("Module is not formatted correctly!")
+                    else:
+                        ##TODO: update command status
+                        print("module not available locally...")
 
             block = ClassControlBlock(block_data["index"], commands,
                           block_data["timestamp"], block_data["_previous_hash"], nonce = block_data["nonce"])
@@ -182,18 +190,11 @@ class Network:
             return "Block added to the chain", 201
 
         def announce_new_block(block):
-            print("Announce new block ran", file=sys.stderr)
             for node, peer in self.peers.items():
-                print(peer, file=sys.stderr)
                 if peer["status"] == "ONLINE" and node != self.me["node"]:
-                    print("Online", file=sys.stderr)
                     try:
                         url = "http://{}/add_block".format(peer["URL"])
-                        print(url, file=sys.stderr)
-                        print(block.__dict__, file=sys.stderr)
                         r1 = requests.post(url, data=json.dumps(block.__dict__, sort_keys=True))
-                        print(r1.status_code)
-                        print("tried success", file=sys.stderr)
                     except:
                         #If an error happens, the node is probably offline:
                         self.peers[node]["status"] = "OFFLINE"
@@ -203,7 +204,6 @@ class Network:
             '''
             This will be the method that validates otp wherever otp is located...
             '''
-            print("Validate OTP ran", file=sys.stderr)
             validate_data = request.get_json()
 
 
@@ -213,7 +213,6 @@ class Network:
 
             if not node or not otp:
                 return "Invalid Data", 901
-            print(self.peers)
             if not self.peers.get(node, False):
                 return "peer cannot be found..."
             elif not self.peers.get(node).get("otp", False):
@@ -229,29 +228,7 @@ class Network:
     def run(self, port=8693, host=None):
         self.app.run(debug=True, port=port, host=host)
 
-def consensus():
-    """
-    Our simple consensus algorithm. If a longer valid chain is found, our chain is replaced with it.
-    """
-    global blockchain
- 
-    longest_chain = None
-    current_len = len(blockchain)
- 
-    for node_info in self.peers:
-        node = node_info["URL"]
-        response = requests.get('http://{}/chain'.format(node))
-        length = response.json()['length']
-        chain = response.json()['chain']
-        if length > current_len and self.blockchain.check_chain_validity(chain):
-            current_len = length
-            longest_chain = chain
- 
-    if longest_chain:
-        blockchain = longest_chain
-        return True
- 
-    return False
+
 def generate_one_time_password(node_256):
     '''
     This function is used to generate one time passwords for new peers.
